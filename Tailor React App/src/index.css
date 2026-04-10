@@ -1,0 +1,26 @@
+@import './core/theme/tokens.css';
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Base styles for global consistency */
+a {
+    color: var(--primary);
+    text-decoration: none;
+    transition: color var(--motion-fast);
+}
+
+a:hover {
+    color: var(--primary-hover);
+}
