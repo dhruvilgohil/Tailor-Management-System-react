@@ -36,10 +36,10 @@ const CustomersScreen = () => {
 
     const handleAdd = async () => {
         if (currentCustomer.name && currentCustomer.contact) {
-            // Call Zustand action to hit backend POST /api/customers
+            // Send field names that match the Customer model: { name, contact, address }
             await addCustomer({
-                customerName: currentCustomer.name,
-                contactNo: currentCustomer.contact,
+                name: currentCustomer.name,
+                contact: currentCustomer.contact,
                 address: currentCustomer.address
             });
             setAddModalOpen(false);
@@ -50,8 +50,8 @@ const CustomersScreen = () => {
     const handleEditSave = async () => {
         if (currentCustomer.name && currentCustomer.contact && editingId) {
             await updateCustomer(editingId, {
-                customerName: currentCustomer.name,
-                contactNo: currentCustomer.contact,
+                name: currentCustomer.name,
+                contact: currentCustomer.contact,
                 address: currentCustomer.address
             });
             setEditModalOpen(false);
@@ -66,11 +66,11 @@ const CustomersScreen = () => {
 
     const openEdit = (customer) => {
         setCurrentCustomer({
-            name: customer.customerName || customer.name || '',
-            contact: customer.contactNo || customer.contact || '',
+            name: customer.name || '',
+            contact: customer.contact || '',
             address: customer.address || '',
             measurementAction: 'select',
-            selectedMeasurementId: '' // Would normally pre-fill from customer data if DB connected
+            selectedMeasurementId: ''
         });
         setEditingId(customer._id);
         setEditModalOpen(true);
@@ -78,8 +78,8 @@ const CustomersScreen = () => {
 
     // Filter customers
     const filteredCustomers = customers.filter(c => {
-        const name = (c.customerName || c.name || '').toLowerCase();
-        const contact = (c.contactNo || c.contact || '').toLowerCase();
+        const name = (c.name || '').toLowerCase();
+        const contact = (c.contact || '').toLowerCase();
         const sq = searchQuery.toLowerCase();
         return name.includes(sq) || contact.includes(sq);
     });
@@ -123,8 +123,8 @@ const CustomersScreen = () => {
                     <tbody>
                         {currentCustomers.map((customer) => (
                             <tr key={customer._id} style={{ borderBottom: '1px solid var(--border)' }}>
-                                <td style={{ padding: 'var(--spacing-xl)', color: 'var(--text-primary)' }}>{customer.customerName || customer.name}</td>
-                                <td style={{ padding: 'var(--spacing-xl)', color: 'var(--text-primary)' }}>{customer.contactNo || customer.contact}</td>
+                                <td style={{ padding: 'var(--spacing-xl)', color: 'var(--text-primary)' }}>{customer.name}</td>
+                                <td style={{ padding: 'var(--spacing-xl)', color: 'var(--text-primary)' }}>{customer.contact}</td>
                                 <td style={{ padding: 'var(--spacing-xl)', color: 'var(--text-secondary)', fontSize: '14px' }}>{customer.address || '-'}</td>
                                 <td style={{ padding: 'var(--spacing-xl)', textAlign: 'center' }}>
                                     <button
@@ -288,12 +288,12 @@ const CustomersScreen = () => {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
                                 <span style={{ color: '#6B7280', fontWeight: '500' }}>Name:</span>
-                                <span style={{ color: '#111827', fontWeight: '600' }}>{viewingCustomer.customerName || viewingCustomer.name}</span>
+                                <span style={{ color: '#111827', fontWeight: '600' }}>{viewingCustomer.name}</span>
                             </div>
 
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
                                 <span style={{ color: '#6B7280', fontWeight: '500' }}>Contact No:</span>
-                                <span style={{ color: '#111827', fontWeight: '600' }}>{viewingCustomer.contactNo || viewingCustomer.contact}</span>
+                                <span style={{ color: '#111827', fontWeight: '600' }}>{viewingCustomer.contact}</span>
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', backgroundColor: '#F9FAFB', borderRadius: '8px' }}>

@@ -11,6 +11,7 @@ const orderRoutes = require('./src/routes/orderRoutes');
 const inventoryRoutes = require('./src/routes/inventoryRoutes');
 const incomeRoutes = require('./src/routes/incomeRoutes');
 const measurementRoutes = require('./src/routes/measurementRoutes');
+const tailorRoutes = require('./src/routes/tailorRoutes');
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/income', incomeRoutes);
 app.use('/api/measurements', measurementRoutes);
+app.use('/api/tailors', tailorRoutes);
 
 app.get('/', (req, res) => {
     res.send('Tailor Management API is running...');

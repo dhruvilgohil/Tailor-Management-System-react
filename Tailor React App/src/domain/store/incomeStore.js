@@ -26,5 +26,29 @@ export const useIncomeStore = create((set) => ({
         } catch (error) {
             set({ error: error.response?.data?.message || 'Error adding income', isLoading: false });
         }
+    },
+
+    updateIncome: async (id, incomeData) => {
+        set({ isLoading: true });
+        try {
+            const response = await axios.put(`${API_URL}/${id}`, incomeData);
+            set((state) => ({
+                transactions: state.transactions.map(t => t._id === id ? response.data : t),
+                isLoading: false
+            }));
+        } catch (error) {
+            set({ error: error.response?.data?.message || 'Error updating income', isLoading: false });
+        }
+    },
+
+    deleteIncome: async (id) => {
+        try {
+            await axios.delete(`${API_URL}/${id}`);
+            set((state) => ({
+                transactions: state.transactions.filter(t => t._id !== id)
+            }));
+        } catch (error) {
+            console.error('Error deleting income:', error);
+        }
     }
 }));

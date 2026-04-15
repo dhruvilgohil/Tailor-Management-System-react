@@ -4,7 +4,7 @@ import { useIncomeStore } from '../../domain/store/incomeStore';
 import { useSearchStore } from '../../domain/store/searchStore';
 
 const IncomeScreen = () => {
-    const { transactions, fetchIncome, addIncome } = useIncomeStore();
+    const { transactions, fetchIncome, addIncome, updateIncome, deleteIncome } = useIncomeStore();
     const { searchQuery } = useSearchStore();
     const [isAddModalOpen, setAddModalOpen] = useState(false);
 
@@ -34,9 +34,9 @@ const IncomeScreen = () => {
         }
     };
 
-    const handleEditSave = () => {
-        if (newIncome.customerName && newIncome.amount) {
-            // Placeholder save
+    const handleEditSave = async () => {
+        if (newIncome.customerName && newIncome.amount && editingId) {
+            await updateIncome(editingId, newIncome);
             setEditModalOpen(false);
             setNewIncome({ customerName: '', paymentMethod: '', date: '', amount: '' });
             setEditingId(null);
@@ -181,7 +181,7 @@ const IncomeScreen = () => {
                                         <button onClick={() => openEdit(inc)} style={{ padding: '8px', backgroundColor: '#D9F99D', color: '#4D7C0F', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}><Edit size={18} /></button>
                                     </td>
                                     <td style={{ padding: 'var(--spacing-xl)', textAlign: 'center' }}>
-                                        <button onClick={() => { /* Placeholder for delete */ }} style={{ padding: '8px', backgroundColor: '#FECACA', color: '#B91C1C', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}><Trash2 size={18} /></button>
+                                        <button onClick={() => deleteIncome(inc._id)} style={{ padding: '8px', backgroundColor: '#FECACA', color: '#B91C1C', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}><Trash2 size={18} /></button>
                                     </td>
                                 </tr>
                             )

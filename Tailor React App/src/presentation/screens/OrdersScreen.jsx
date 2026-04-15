@@ -58,7 +58,7 @@ const OrdersScreen = () => {
         : orders.filter(o => o.status === activeTab);
 
     const filteredOrders = baseFilteredOrders.filter(o => {
-        const custName = (o.customerId?.customerName || o.customerId?.name || '').toLowerCase();
+        const custName = (o.customerId?.name || '').toLowerCase();
         const sq = searchQuery.toLowerCase();
         return custName.includes(sq);
     });
@@ -116,8 +116,8 @@ const OrdersScreen = () => {
 
         if (currentOrder.isNewCustomer && currentOrder.newCustomerName && currentOrder.newCustomerContact) {
             const newCust = await addCustomer({
-                customerName: currentOrder.newCustomerName,
-                contactNo: currentOrder.newCustomerContact
+                name: currentOrder.newCustomerName,
+                contact: currentOrder.newCustomerContact
             });
             if (newCust && newCust._id) {
                 finalCustomerId = newCust._id;
@@ -336,7 +336,7 @@ const OrdersScreen = () => {
                                 {!currentOrder.isNewCustomer ? (
                                     <select value={currentOrder.customerId} onChange={(e) => setCurrentOrder({ ...currentOrder, customerId: e.target.value })} style={{ width: '100%', padding: '10px', border: '1px solid var(--border)', borderRadius: '6px', outline: 'none', color: '#111827' }}>
                                         <option value="">Select Customer</option>
-                                        {customers.map(c => (<option key={c._id} value={c._id}>{c.customerName || c.name} ({c.contactNo || c.contact})</option>))}
+                                        {customers.map(c => (<option key={c._id} value={c._id}>{c.name} ({c.contact})</option>))}
                                     </select>
                                 ) : (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

@@ -12,7 +12,14 @@ export const useAuthStore = create((set) => ({
     register: async (userData) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await axios.post(API_URL + 'register', userData);
+            // Backend User model uses 'username' field. We use email as the username.
+            const payload = {
+                username: userData.email,
+                password: userData.password,
+                fullName: userData.fullName,
+                shopName: userData.shopName,
+            };
+            const response = await axios.post(API_URL + 'register', payload);
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('user', JSON.stringify(response.data));
             set({ isAuthenticated: true, user: response.data, isLoading: false, error: null });
@@ -29,7 +36,8 @@ export const useAuthStore = create((set) => ({
     login: async (email, password) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await axios.post(API_URL + 'login', { email, password });
+            // Backend expects 'username' (we use email as the username)
+            const response = await axios.post(API_URL + 'login', { username: email, password });
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('user', JSON.stringify(response.data));
             set({ isAuthenticated: true, user: response.data, isLoading: false, error: null });
@@ -54,7 +62,7 @@ export const useAuthStore = create((set) => ({
         } catch (error) {
             set({
                 isLoading: false,
-                error: error.response?.data?.message || 'Google authentication failed'
+                error: error.response?.data?.message || 'Google login failed. Please use email/password login instead.'
             });
             return false;
         }

@@ -147,8 +147,8 @@ const MeasurementScreen = () => {
     // Filter measurements
     const filteredMeasurements = (measurements || []).filter(m => {
         const custObj = customers.find(c => c._id === (m.customerId?._id || m.customerId));
-        const custName = (m.customerId?.customerName || m.customerId?.name || custObj?.customerName || custObj?.name || '').toLowerCase();
-        const dressType = (m.dressType || m.type || '').toLowerCase();
+        const custName = (m.customerId?.name || custObj?.name || '').toLowerCase();
+        const dressType = (m.type || m.dressType || '').toLowerCase();
         const sq = searchQuery.toLowerCase();
         return custName.includes(sq) || dressType.includes(sq);
     });
@@ -221,12 +221,17 @@ const MeasurementScreen = () => {
                         <tbody>
                             {currentMeasurements && currentMeasurements.length > 0 ? currentMeasurements.map((m) => {
                                 const custObj = customers.find(c => c._id === (m.customerId?._id || m.customerId));
-                                const custName = m.customerId?.customerName || m.customerId?.name || custObj?.customerName || custObj?.name || 'Unknown';
-                                const dateStr = m.measurementDate ? new Date(m.measurementDate).toLocaleDateString() : (m.recordedDate ? new Date(m.recordedDate).toLocaleDateString() : '');
+                                const custName = m.customerId?.name || custObj?.name || 'Unknown';
+                                const dressTypeLabel = m.type || m.dressType || '-';
+                                const dateStr = m.recordedDate
+                                    ? new Date(m.recordedDate).toLocaleDateString()
+                                    : m.measurementDate
+                                        ? new Date(m.measurementDate).toLocaleDateString()
+                                        : '';
                                 return (
                                     <tr key={m._id || Math.random()} style={{ backgroundColor: 'var(--surface)' }}>
                                         <td style={{ padding: '16px', color: '#000', borderBottom: '1px solid #F3F4F6' }}>{custName}</td>
-                                        <td style={{ padding: '16px', textAlign: 'center', color: '#000', borderBottom: '1px solid #F3F4F6' }}>{m.dressType}</td>
+                                        <td style={{ padding: '16px', textAlign: 'center', color: '#000', borderBottom: '1px solid #F3F4F6' }}>{dressTypeLabel}</td>
                                         <td style={{ padding: '16px', textAlign: 'center', color: '#000', borderBottom: '1px solid #F3F4F6' }}>{dateStr}</td>
                                         <td style={{ padding: '16px', textAlign: 'center', borderBottom: '1px solid #F3F4F6', display: 'flex', gap: '8px', justifyContent: 'center' }}>
                                             <button onClick={() => setViewingMeasurement(m)} style={{ padding: '8px', backgroundColor: '#1E293B', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
@@ -394,19 +399,27 @@ const MeasurementScreen = () => {
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
                                 <span style={{ color: '#6B7280', fontWeight: '500' }}>Customer:</span>
                                 <span style={{ color: '#111827', fontWeight: '600' }}>
-                                    {customers.find(c => c._id === (viewingMeasurement.customerId?._id || viewingMeasurement.customerId))?.customerName || 'Unknown'}
+                                    {(() => {
+                                        const custId = viewingMeasurement.customerId?._id || viewingMeasurement.customerId;
+                                        const c = customers.find(c => c._id === custId);
+                                        return c?.name || 'Unknown';
+                                    })()}
                                 </span>
                             </div>
 
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
                                 <span style={{ color: '#6B7280', fontWeight: '500' }}>Dress Type:</span>
-                                <span style={{ color: '#111827', fontWeight: '600' }}>{viewingMeasurement.dressType || viewingMeasurement.type}</span>
+                                <span style={{ color: '#111827', fontWeight: '600' }}>{viewingMeasurement.type || viewingMeasurement.dressType}</span>
                             </div>
 
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
                                 <span style={{ color: '#6B7280', fontWeight: '500' }}>Measured On:</span>
                                 <span style={{ color: '#111827', fontWeight: '600' }}>
-                                    {viewingMeasurement.measurementDate ? new Date(viewingMeasurement.measurementDate).toLocaleDateString() : (viewingMeasurement.recordedDate ? new Date(viewingMeasurement.recordedDate).toLocaleDateString() : 'N/A')}
+                                    {viewingMeasurement.recordedDate
+                                        ? new Date(viewingMeasurement.recordedDate).toLocaleDateString()
+                                        : viewingMeasurement.measurementDate
+                                            ? new Date(viewingMeasurement.measurementDate).toLocaleDateString()
+                                            : 'N/A'}
                                 </span>
                             </div>
 

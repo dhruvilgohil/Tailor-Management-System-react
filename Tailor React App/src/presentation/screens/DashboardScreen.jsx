@@ -3,6 +3,7 @@ import { useCustomerStore } from '../../domain/store/customerStore';
 import { useOrderStore } from '../../domain/store/orderStore';
 import { useIncomeStore } from '../../domain/store/incomeStore';
 import { useInventoryStore } from '../../domain/store/inventoryStore';
+import { useSearchStore } from '../../domain/store/searchStore';
 import { Users, Receipt, Clock, Wallet, Eye } from 'lucide-react';
 
 const StatCard = ({ title, value, subtext, icon: Icon, color }) => (
@@ -35,6 +36,7 @@ const DashboardScreen = () => {
     const { orders, fetchOrders } = useOrderStore();
     const { transactions, fetchIncome } = useIncomeStore();
     const { items, fetchItems } = useInventoryStore();
+    const { searchQuery } = useSearchStore();
     const [viewingOrder, setViewingOrder] = useState(null);
 
     useEffect(() => {
@@ -51,6 +53,26 @@ const DashboardScreen = () => {
 
     // Calculate Total Income safely
     const totalIncome = (transactions || []).reduce((sum, txn) => sum + Number(txn.amount || 0), 0);
+
+    const filteredOrders = (orders || []).filter((order) => {
+        const query = searchQuery.trim().toLowerCase();
+
+        if (!query) return true;
+
+        const customerName = (order.customerId?.customerName || order.customerId?.name || '').toLowerCase();
+        const services = Array.isArray(order.services)
+            ? order.services.join(', ').toLowerCase()
+            : (order.services || '').toLowerCase();
+        const status = (order.status || '').toLowerCase();
+        const assignedTailor = (order.assignedTailor?.name || '').toLowerCase();
+
+        return (
+            customerName.includes(query) ||
+            services.includes(query) ||
+            status.includes(query) ||
+            assignedTailor.includes(query)
+        );
+    });
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-2xl)' }}>
@@ -86,7 +108,7 @@ const DashboardScreen = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {(orders || []).slice(0, 5).map((order) => {
+                        {filteredOrders.slice(0, 5).map((order) => {
                             // Extract just the date string (YYYY-MM-DD) from ISO format
                             const formattedDate = new Date(order.createdAt).toLocaleDateString('en-GB').replace(/\//g, '-');
 
@@ -130,6 +152,13 @@ const DashboardScreen = () => {
                                 </tr>
                             );
                         })}
+                        {filteredOrders.length === 0 && (
+                            <tr>
+                                <td colSpan="6" style={{ padding: '32px 16px', textAlign: 'center', color: '#6B7280', fontSize: '15px' }}>
+                                    No orders match your search.
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>

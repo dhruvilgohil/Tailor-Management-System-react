@@ -20,6 +20,21 @@ const addInventoryItem = async (req, res) => {
     }
 };
 
+// @route   PUT /api/inventory/:id
+const updateInventoryItem = async (req, res) => {
+    try {
+        const item = await InventoryItem.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
+        if (!item) return res.status(404).json({ message: 'Item not found' });
+        res.json(item);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
 // @route   DELETE /api/inventory/:id
 const deleteInventoryItem = async (req, res) => {
     try {
@@ -31,4 +46,4 @@ const deleteInventoryItem = async (req, res) => {
     }
 };
 
-module.exports = { getInventoryItems, addInventoryItem, deleteInventoryItem };
+module.exports = { getInventoryItems, addInventoryItem, updateInventoryItem, deleteInventoryItem };

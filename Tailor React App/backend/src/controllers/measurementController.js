@@ -21,4 +21,31 @@ const saveMeasurement = async (req, res) => {
     }
 };
 
-module.exports = { getMeasurements, saveMeasurement };
+// @route   PUT /api/measurements/:id
+const updateMeasurement = async (req, res) => {
+    try {
+        const measurement = await Measurement.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
+        if (!measurement) return res.status(404).json({ message: 'Measurement not found' });
+        const populated = await Measurement.findById(measurement._id).populate('customerId', 'name contact');
+        res.json(populated);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+// @route   DELETE /api/measurements/:id
+const deleteMeasurement = async (req, res) => {
+    try {
+        const measurement = await Measurement.findByIdAndDelete(req.params.id);
+        if (!measurement) return res.status(404).json({ message: 'Measurement not found' });
+        res.json({ message: 'Measurement removed' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { getMeasurements, saveMeasurement, updateMeasurement, deleteMeasurement };

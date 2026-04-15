@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, AlertTriangle, Clock, CreditCard, X } from 'lucide-react';
+import { Bell, AlertTriangle, Clock, CreditCard, X, Loader, ListTodo, Scissors } from 'lucide-react';
 import { useOrderStore } from '../../domain/store/orderStore';
 
 const NotificationBell = () => {
@@ -8,6 +8,12 @@ const NotificationBell = () => {
     const dropdownRef = useRef(null);
     const navigate = useNavigate();
     const orders = useOrderStore(state => state.orders);
+    const fetchOrders = useOrderStore(state => state.fetchOrders);
+    const isLoading = useOrderStore(state => state.isLoading);
+
+    useEffect(() => {
+        fetchOrders();
+    }, [fetchOrders]);
 
     // Close dropdown on outside click
     useEffect(() => {
@@ -20,37 +26,102 @@ const NotificationBell = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const { overdueOrders, dueTodayOrders, pendingPaymentOrders, totalCount } = useMemo(() => {
+    const notifications = useMemo(() => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
+        const activeOrders = (orders || []).filter(order => order.status !== 'Completed');
 
-        const active = (orders || []).filter(o => o.status !== 'Completed');
+        const builtNotifications = activeOrders.map((order) => {
+            let variant = 'status';
+            let title = 'Order Pending';
+            let message = 'This order is waiting to be started.';
+            let icon = ListTodo;
+            let accent = {
+                borderColor: '#FDE68A',
+                backgroundColor: '#FFFBEB',
+                iconBg: '#FEF3C7',
+                iconColor: '#D97706'
+            };
 
-        const overdueOrders = active.filter(o => {
-            if (!o.targetDeliveryDate) return false;
-            const d = new Date(o.targetDeliveryDate);
-            d.setHours(0, 0, 0, 0);
-            return d < today;
+            if (order.targetDeliveryDate) {
+                const deliveryDate = new Date(order.targetDeliveryDate);
+                deliveryDate.setHours(0, 0, 0, 0);
+
+                if (deliveryDate < today) {
+                    variant = 'overdue';
+                    title = 'Overdue Order';
+                    message = `Due: ${deliveryDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`;
+                    icon = AlertTriangle;
+                    accent = {
+                        borderColor: '#FEE2E2',
+                        backgroundColor: '#FFF5F5',
+                        iconBg: '#FEE2E2',
+                        iconColor: '#DC2626'
+                    };
+                } else if (deliveryDate.getTime() === today.getTime()) {
+                    variant = 'due-today';
+                    title = 'Due Today';
+                    message = 'Deliver before end of day.';
+                    icon = Clock;
+                    accent = {
+                        borderColor: '#FEF3C7',
+                        backgroundColor: '#FFFBEB',
+                        iconBg: '#FEF3C7',
+                        iconColor: '#D97706'
+                    };
+                }
+            }
+
+            if (variant === 'status' && order.paymentMethod === 'Pending') {
+                variant = 'payment-pending';
+                title = 'Payment Pending';
+                message = 'Customer payment is still pending.';
+                icon = CreditCard;
+                accent = {
+                    borderColor: '#DBEAFE',
+                    backgroundColor: '#EFF6FF',
+                    iconBg: '#DBEAFE',
+                    iconColor: '#2563EB'
+                };
+            } else if (variant === 'status' && order.status === 'In Progress') {
+                title = 'Order In Progress';
+                message = 'Tailor is currently working on this order.';
+                icon = Scissors;
+                accent = {
+                    borderColor: '#D1FAE5',
+                    backgroundColor: '#ECFDF5',
+                    iconBg: '#D1FAE5',
+                    iconColor: '#059669'
+                };
+            }
+
+            return {
+                key: `${variant}-${order._id}`,
+                variant,
+                order,
+                title,
+                message,
+                icon,
+                accent
+            };
         });
 
-        const dueTodayOrders = active.filter(o => {
-            if (!o.targetDeliveryDate) return false;
-            const d = new Date(o.targetDeliveryDate);
-            d.setHours(0, 0, 0, 0);
-            return d.getTime() === today.getTime();
+        const priority = {
+            overdue: 0,
+            'due-today': 1,
+            'payment-pending': 2,
+            status: 3
+        };
+
+        return builtNotifications.sort((a, b) => {
+            const priorityDiff = (priority[a.variant] ?? 99) - (priority[b.variant] ?? 99);
+            if (priorityDiff !== 0) return priorityDiff;
+            return new Date(b.order.createdAt) - new Date(a.order.createdAt);
         });
-
-        const pendingPaymentOrders = (orders || []).filter(o =>
-            o.paymentMethod === 'Pending' && o.status !== 'Completed'
-        );
-
-        const totalCount = overdueOrders.length + dueTodayOrders.length + pendingPaymentOrders.length;
-        return { overdueOrders, dueTodayOrders, pendingPaymentOrders, totalCount };
     }, [orders]);
 
-    const getCustomerName = (order) => order.customerId?.customerName || 'Unknown Customer';
+    const getCustomerName = (order) => order.customerId?.name || order.customerId?.customerName || 'Unknown Customer';
+    const totalCount = notifications.length;
 
     return (
         <div ref={dropdownRef} style={{ position: 'relative' }}>
@@ -133,7 +204,12 @@ const NotificationBell = () => {
 
                     {/* Notification List */}
                     <div style={{ maxHeight: '420px', overflowY: 'auto' }}>
-                        {totalCount === 0 ? (
+                        {isLoading && totalCount === 0 ? (
+                            <div style={{ padding: '40px 20px', textAlign: 'center', color: '#9CA3AF' }}>
+                                <Loader size={28} style={{ marginBottom: '12px', opacity: 0.5 }} />
+                                <p style={{ fontWeight: '600' }}>Loading notifications...</p>
+                            </div>
+                        ) : totalCount === 0 ? (
                             <div style={{ padding: '40px 20px', textAlign: 'center', color: '#9CA3AF' }}>
                                 <Bell size={40} style={{ marginBottom: '12px', opacity: 0.3 }} />
                                 <p style={{ fontWeight: '600' }}>All caught up!</p>
@@ -141,15 +217,14 @@ const NotificationBell = () => {
                             </div>
                         ) : (
                             <>
-                                {/* Overdue Section */}
-                                {overdueOrders.map(order => (
+                                {notifications.map(({ key, order, title, message, icon: Icon, accent }) => (
                                     <div
-                                        key={`overdue-${order._id}`}
+                                        key={key}
                                         onClick={() => { navigate('/orders'); setOpen(false); }}
                                         style={{
                                             padding: '14px 20px',
-                                            borderBottom: '1px solid #FEE2E2',
-                                            backgroundColor: '#FFF5F5',
+                                            borderBottom: `1px solid ${accent.borderColor}`,
+                                            backgroundColor: accent.backgroundColor,
                                             cursor: 'pointer',
                                             transition: 'background 0.15s',
                                             display: 'flex',
@@ -157,69 +232,13 @@ const NotificationBell = () => {
                                             alignItems: 'flex-start'
                                         }}
                                     >
-                                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' }}>
-                                            <AlertTriangle size={18} color="#DC2626" />
+                                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: accent.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' }}>
+                                            <Icon size={18} color={accent.iconColor} />
                                         </div>
                                         <div>
-                                            <p style={{ margin: 0, fontWeight: '600', fontSize: '14px', color: '#DC2626' }}>Overdue Order</p>
+                                            <p style={{ margin: 0, fontWeight: '600', fontSize: '14px', color: accent.iconColor }}>{title}</p>
                                             <p style={{ margin: '2px 0 4px', fontSize: '13px', color: '#374151' }}>{getCustomerName(order)}</p>
-                                            <p style={{ margin: 0, fontSize: '12px', color: '#9CA3AF' }}>
-                                                Due: {new Date(order.targetDeliveryDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {/* Due Today Section */}
-                                {dueTodayOrders.map(order => (
-                                    <div
-                                        key={`today-${order._id}`}
-                                        onClick={() => { navigate('/orders'); setOpen(false); }}
-                                        style={{
-                                            padding: '14px 20px',
-                                            borderBottom: '1px solid #FEF3C7',
-                                            backgroundColor: '#FFFBEB',
-                                            cursor: 'pointer',
-                                            transition: 'background 0.15s',
-                                            display: 'flex',
-                                            gap: '12px',
-                                            alignItems: 'flex-start'
-                                        }}
-                                    >
-                                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' }}>
-                                            <Clock size={18} color="#D97706" />
-                                        </div>
-                                        <div>
-                                            <p style={{ margin: 0, fontWeight: '600', fontSize: '14px', color: '#D97706' }}>Due Today</p>
-                                            <p style={{ margin: '2px 0 4px', fontSize: '13px', color: '#374151' }}>{getCustomerName(order)}</p>
-                                            <p style={{ margin: 0, fontSize: '12px', color: '#9CA3AF' }}>Deliver before end of day</p>
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {/* Pending Payment Section */}
-                                {pendingPaymentOrders.map(order => (
-                                    <div
-                                        key={`payment-${order._id}`}
-                                        onClick={() => { navigate('/orders'); setOpen(false); }}
-                                        style={{
-                                            padding: '14px 20px',
-                                            borderBottom: '1px solid #DBEAFE',
-                                            backgroundColor: '#EFF6FF',
-                                            cursor: 'pointer',
-                                            transition: 'background 0.15s',
-                                            display: 'flex',
-                                            gap: '12px',
-                                            alignItems: 'flex-start'
-                                        }}
-                                    >
-                                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' }}>
-                                            <CreditCard size={18} color="#2563EB" />
-                                        </div>
-                                        <div>
-                                            <p style={{ margin: 0, fontWeight: '600', fontSize: '14px', color: '#2563EB' }}>Payment Pending</p>
-                                            <p style={{ margin: '2px 0 4px', fontSize: '13px', color: '#374151' }}>{getCustomerName(order)}</p>
-                                            <p style={{ margin: 0, fontSize: '12px', color: '#9CA3AF' }}>No payment collected yet</p>
+                                            <p style={{ margin: 0, fontSize: '12px', color: '#9CA3AF' }}>{message}</p>
                                         </div>
                                     </div>
                                 ))}
